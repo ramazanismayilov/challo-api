@@ -10,6 +10,8 @@ import { ClsModule } from 'nestjs-cls';
 import { Request } from 'express';
 import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
+import { AuthModule } from './modules/auth/auth.module';
+import { UserModule } from './modules/user/user.module';
 
 @Module({
   imports: [
@@ -79,6 +81,8 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
         };
       },
     }),
+    AuthModule,
+    UserModule
   ],
   controllers: [AppController],
   providers: [AppService],
