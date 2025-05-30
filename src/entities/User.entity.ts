@@ -1,24 +1,16 @@
-import { UserStatus } from "src/common/enums/userStatus.enum";
-import { Column, CreateDateColumn, Entity, JoinColumn, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { ImageEntity } from "./Image.entity";
+import { Column, CreateDateColumn, Entity, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { UserRole } from "src/common/enums/role.enum";
+import { ProfileEntity } from "./Profile.entity";
+import { GroupEntity } from "./Group.entity";
+import { StatusEntity } from "./Status.entity";
 
 @Entity('user')
 export class UserEntity {
     @PrimaryGeneratedColumn()
     id: number;
 
-    @OneToOne(() => ImageEntity, { onDelete: 'SET NULL' })
-    @JoinColumn({
-        name: 'avatarId',
-        referencedColumnName: 'id',
-    })
-    avatar: ImageEntity | null;
-
     @Column()
     displayName: string;
-
-    @Column()
-    about: string;
 
     @Column({ unique: true })
     email: string;
@@ -26,11 +18,35 @@ export class UserEntity {
     @Column()
     password: string;
 
-    @Column({ type: 'enum', enum: UserStatus, default: UserStatus.OFFLINE })
-    status: UserStatus;
+    @Column({ default: false })
+    isVerified: boolean
 
-    @Column('timestamp')
-    lastSeen: Date;
+    @Column({ type: 'int', nullable: true })
+    otpCode?: number | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    otpExpiredAt?: Date | null;
+
+    @Column({ type: 'varchar', nullable: true })
+    refreshToken: string | null;
+
+    @Column({ type: 'timestamp', nullable: true })
+    refreshTokenDate: Date | null;
+
+    @Column({ type: 'enum', enum: UserRole, default: UserRole.USER })
+    role: UserRole;
+
+    @OneToOne(() => ProfileEntity, profile => profile.user, { cascade: true })
+    profile: ProfileEntity;
+
+    @OneToMany(() => GroupEntity, (chat) => chat.creator)
+    createdGroups: GroupEntity[];
+
+    @ManyToMany(() => GroupEntity, (chat) => chat.members)
+    groups: GroupEntity[];
+
+    @OneToMany(() => StatusEntity, (status) => status.user)
+    statuses: StatusEntity[];
 
     @CreateDateColumn()
     createdAt: Date;
