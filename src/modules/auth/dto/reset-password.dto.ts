@@ -1,19 +1,19 @@
 import { Type } from "class-transformer";
 import { IsEmail, IsString, Length } from "class-validator";
 
-export class RegisterDto {
+export class ResetPasswordDto {
     @Type()
     @IsString()
-    @Length(3, 20)
-    displayName: string
-
-    @Type()
-    @IsString()
-    @IsEmail()
-    email: string
+    @Length(6, 12)
+    currentPassword: string;
 
     @Type()
     @IsString()
     @Length(6, 12)
-    password: string;
+    newPassword: string;
+
+    @Type()
+    @IsString()
+    @Length(6, 12)
+    repeatPassword: string;
 }

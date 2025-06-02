@@ -1,12 +1,7 @@
 import { Type } from "class-transformer";
 import { IsEmail, IsString, Length } from "class-validator";
 
-export class RegisterDto {
-    @Type()
-    @IsString()
-    @Length(3, 20)
-    displayName: string
-
+export class LoginDto {
     @Type()
     @IsString()
     @IsEmail()
