@@ -69,7 +69,7 @@ import { UserModule } from './modules/user/user.module';
             },
           },
           defaults: {
-            from: `"166 Cargo" <${config.get('SMTP_FROM')}>`,
+            from: `"Chat System" <${config.get('SMTP_FROM')}>`,
           },
           template: {
             dir: join(__dirname, '..', 'src', 'templates'),
