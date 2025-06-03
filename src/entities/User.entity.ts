@@ -51,9 +51,9 @@ export class UserEntity {
     @OneToMany(() => StatusEntity, (status) => status.user)
     statuses: StatusEntity[];
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

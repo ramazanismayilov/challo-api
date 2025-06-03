@@ -10,10 +10,12 @@ import { VerifyNewEmailDto } from "./dto/verifyNewEmail.dto";
 import { EmailUpdateDto } from "./dto/updateEmail.dto";
 import { generateOtpExpireDate, generateOtpNumber } from "src/common/utils/randomNumber.utils";
 import { MailerService } from "@nestjs-modules/mailer";
+import { ProfileEntity } from "src/entities/Profile.entity";
 
 @Injectable()
 export class UserService {
     private userRepo: Repository<UserEntity>;
+    private profileRepo: Repository<ProfileEntity>;
     private mediaRepo: Repository<MediaEntity>;
 
     constructor(
@@ -22,6 +24,7 @@ export class UserService {
         @InjectDataSource() private dataSource: DataSource
     ) {
         this.userRepo = this.dataSource.getRepository(UserEntity);
+        this.profileRepo = this.dataSource.getRepository(ProfileEntity);
         this.mediaRepo = this.dataSource.getRepository(MediaEntity);
     }
 
@@ -29,39 +32,26 @@ export class UserService {
         const currentUser = this.cls.get<UserEntity>('user');
         if (currentUser.role !== UserRole.ADMIN) throw new ForbiddenException('You do not have permission for this operation');
 
-        let users = await this.userRepo.find({
-            relations: ['profile'],
-            select: {
-                profile: {
-                    about: true,
-                    lastSeen: true,
-                    status: true
-                }
-            }
-        });
+        let users = await this.userRepo.find({ relations: ['profile'] });
         if (!users || users.length === 0) throw new NotFoundException('Users not found');
 
         return users;
     }
 
     async getUser(userId: number) {
-        let user = await this.userRepo.findOne({
-            where: { id: userId },
-            relations: ['profile'],
-            select: {
-                profile: {
-                    about: true,
-                    lastSeen: true,
-                    status: true
-                }
-            }
-        });
+        let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile'] });
         if (!user) throw new NotFoundException('User not found')
         return user
     }
 
     async updateProfile(params: ProfileUpdateDto) {
-        let user = this.cls.get<UserEntity>('user')
+        const user = await this.userRepo.findOne({
+            where: { id: this.cls.get<UserEntity>('user').id },
+            relations: ['profile', 'profile.avatar']
+        });
+
+        if (!user || !user.profile) throw new NotFoundException('User or profile not found');
+
         if (params.displayName) user.displayName = params.displayName;
         if (params.about) user.profile.about = params.about;
 

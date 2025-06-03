@@ -25,9 +25,9 @@ export class ProfileEntity {
     @Column({ type: 'enum', enum: UserStatus, default: UserStatus.OFFLINE })
     status: UserStatus;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

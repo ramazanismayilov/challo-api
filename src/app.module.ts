@@ -12,6 +12,7 @@ import { MailerModule } from '@nestjs-modules/mailer';
 import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handlebars.adapter';
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
+import { UploadModule } from './modules/upload/upload.module';
 
 @Module({
   imports: [
@@ -82,7 +83,8 @@ import { UserModule } from './modules/user/user.module';
       },
     }),
     AuthModule,
-    UserModule
+    UserModule,
+    UploadModule
   ],
   controllers: [AppController],
   providers: [AppService],
