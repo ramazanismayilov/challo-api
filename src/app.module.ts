@@ -13,6 +13,7 @@ import { HandlebarsAdapter } from '@nestjs-modules/mailer/dist/adapters/handleba
 import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { UploadModule } from './modules/upload/upload.module';
+import { MessageModule } from './modules/message/message.module';
 
 @Module({
   imports: [
@@ -84,7 +85,8 @@ import { UploadModule } from './modules/upload/upload.module';
     }),
     AuthModule,
     UserModule,
-    UploadModule
+    UploadModule,
+    MessageModule
   ],
   controllers: [AppController],
   providers: [AppService],
