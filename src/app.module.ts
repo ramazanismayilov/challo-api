@@ -14,6 +14,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { UserModule } from './modules/user/user.module';
 import { UploadModule } from './modules/upload/upload.module';
 import { MessageModule } from './modules/message/message.module';
+import { ChatModule } from './modules/chat/chat.module';
 
 @Module({
   imports: [
@@ -86,7 +87,8 @@ import { MessageModule } from './modules/message/message.module';
     AuthModule,
     UserModule,
     UploadModule,
-    MessageModule
+    MessageModule,
+    ChatModule
   ],
   controllers: [AppController],
   providers: [AppService],

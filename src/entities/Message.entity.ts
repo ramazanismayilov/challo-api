@@ -16,7 +16,7 @@ export class MessageEntity {
     @JoinColumn({ name: 'mediaId' })
     media: MediaEntity | null;
 
-    @ManyToOne(() => UserEntity)
+    @ManyToOne(() => UserEntity, { nullable: false, onDelete: 'CASCADE' })
     user: UserEntity
 
     @ManyToOne(() => ChatEntity, (chat) => chat.messages, { onDelete: 'CASCADE' })

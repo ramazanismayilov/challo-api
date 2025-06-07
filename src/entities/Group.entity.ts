@@ -1,6 +1,7 @@
 import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { MediaEntity } from "./Media.entity";
 import { UserEntity } from "./User.entity";
+import { ChatEntity } from "./Chat.entity";
 
 @Entity('group')
 export class GroupEntity {
@@ -28,6 +29,10 @@ export class GroupEntity {
     @ManyToMany(() => UserEntity, (user) => user.groups, { cascade: true })
     @JoinTable({ name: 'group_members' })
     members: UserEntity[];
+
+    @OneToOne(() => ChatEntity, { cascade: true, onDelete: 'CASCADE' })
+    @JoinColumn({ name: 'chatId' })
+    chat: ChatEntity;
 
     @CreateDateColumn()
     createdAt: Date;

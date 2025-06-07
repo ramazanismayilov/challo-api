@@ -1,15 +1,18 @@
-import { CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { MessageEntity } from "./Message.entity";
-import { UserEntity } from "./User.entity";
+import { ChatParticipantEntity } from "./Participiant.entity";
+import { GroupEntity } from "./Group.entity";
 
 @Entity('chat')
 export class ChatEntity {
     @PrimaryGeneratedColumn()
     id: number
 
-    @ManyToMany(() => UserEntity)
-    @JoinTable({ name: 'chat_participants' })
-    participants: UserEntity[];
+    @OneToMany(() => ChatParticipantEntity, (participants) => participants.chat)
+    participants: ChatParticipantEntity[];
+
+    @OneToOne(() => GroupEntity)
+    group: GroupEntity;
 
     @OneToMany(() => MessageEntity, (message) => message.chat, { cascade: true })
     messages: MessageEntity[];

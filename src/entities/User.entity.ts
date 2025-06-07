@@ -3,6 +3,7 @@ import { UserRole } from "src/common/enums/role.enum";
 import { ProfileEntity } from "./Profile.entity";
 import { GroupEntity } from "./Group.entity";
 import { StatusEntity } from "./Status.entity";
+import { ChatParticipantEntity } from "./Participiant.entity";
 
 @Entity('user')
 export class UserEntity {
@@ -50,6 +51,9 @@ export class UserEntity {
 
     @OneToMany(() => StatusEntity, (status) => status.user)
     statuses: StatusEntity[];
+
+    @OneToMany(() => ChatParticipantEntity, (participantMeta) => participantMeta.user)
+    chatParticipants: ChatParticipantEntity[];
 
     @CreateDateColumn({ select: false })
     createdAt: Date;
