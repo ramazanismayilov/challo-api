@@ -12,9 +12,6 @@ export class MessageEntity {
     @Column()
     text: string
 
-    @Column()
-    chatId: number
-
     @ManyToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'mediaId' })
     media: MediaEntity | null;
