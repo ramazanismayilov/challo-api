@@ -26,10 +26,10 @@ export class UserEntity {
     isVerified: boolean
 
     @Column({ type: 'int', nullable: true })
-    otpCode?: number | null;
+    otpCode: number | null;
 
     @Column({ type: 'timestamp', nullable: true })
-    otpExpiredAt?: Date | null;
+    otpExpiredAt: Date | null;
 
     @Column({ type: 'varchar', nullable: true })
     refreshToken: string | null;

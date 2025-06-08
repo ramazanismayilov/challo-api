@@ -11,7 +11,7 @@ export class GroupEntity {
     @Column()
     name: string
 
-    @Column({ nullable: true })
+    @Column({ type: 'text', nullable: true })
     description?: string;
 
     @OneToOne(() => MediaEntity, { onDelete: 'SET NULL', nullable: true })

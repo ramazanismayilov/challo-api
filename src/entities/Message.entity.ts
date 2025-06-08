@@ -10,16 +10,20 @@ export class MessageEntity {
     id: number
 
     @Column()
-    content: string
+    text: string
 
-    @OneToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
+    @Column()
+    chatId: number
+
+    @ManyToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'mediaId' })
     media: MediaEntity | null;
 
     @ManyToOne(() => UserEntity, { nullable: false, onDelete: 'CASCADE' })
     user: UserEntity
 
-    @ManyToOne(() => ChatEntity, (chat) => chat.messages, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ChatEntity, (chat) => chat.messages, { onDelete: 'CASCADE', nullable: false })
+    @JoinColumn({ name: 'chatId' })
     chat: ChatEntity
 
     @Column({ type: 'enum', enum: MessageStatus, default: MessageStatus.SENT })

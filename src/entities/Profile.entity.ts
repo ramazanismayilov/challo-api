@@ -16,7 +16,7 @@ export class ProfileEntity {
     @JoinColumn({ name: 'avatarId' })
     avatar: MediaEntity | null;
 
-    @Column()
+    @Column({ nullable: true })
     about: string;
 
     @Column('timestamp')

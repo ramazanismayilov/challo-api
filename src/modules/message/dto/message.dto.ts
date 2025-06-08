@@ -4,7 +4,7 @@ import { IsOptional, IsString, IsUUID } from "class-validator";
 export class CreateMessageDto {
     @Type()
     @IsString()
-    content: string;
+    text: string;
 
     @Type()
     @IsString()

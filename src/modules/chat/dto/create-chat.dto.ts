@@ -9,7 +9,7 @@ export class CreateChatDto {
     @Type()
     @IsString()
     @IsOptional()
-    message: string;
+    text: string;
 
     @Type()
     @IsOptional()

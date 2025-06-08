@@ -47,15 +47,13 @@ export class MessageService {
         }
 
         const newMessage = this.messageRepo.create({
-            content: params.content,
+            text: params.text,
             user,
-            chat: {id: chat.id},
+            chat,
             media
         });
 
         const savedMessage = await this.messageRepo.save(newMessage);
-        chat.lastMessage = savedMessage;
-        await this.chatRepo.save(chat);
-        return { message: "Message created successfully", savedMessage };
+        return { messsage: 'Message created successfully', savedMessage };
     }
 }

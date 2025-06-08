@@ -11,13 +11,13 @@ export class ChatEntity {
     @OneToMany(() => ChatParticipantEntity, (participants) => participants.chat)
     participants: ChatParticipantEntity[];
 
-    @OneToOne(() => GroupEntity)
-    group: GroupEntity;
+    @OneToOne(() => GroupEntity, { nullable: true })
+    group?: GroupEntity;
 
     @OneToMany(() => MessageEntity, (message) => message.chat, { cascade: true })
     messages: MessageEntity[];
 
-    @OneToOne(() => MessageEntity, { nullable: true })
+    @OneToOne(() => MessageEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'lastMessageId' })
     lastMessage: MessageEntity | null;
 
