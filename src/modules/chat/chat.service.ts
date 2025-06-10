@@ -24,10 +24,35 @@ export class ChatService {
         this.chatParticipantRepo = this.dataSource.getRepository(ChatParticipantEntity)
     }
 
+    async getUserChats() {
+        const currentUser = this.cls.get<UserEntity>('user');
+
+        const userChats = await this.chatRepo
+            .createQueryBuilder('chat')
+            .leftJoinAndSelect('chat.participants', 'participant')
+            .leftJoinAndSelect('participant.user', 'user')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .leftJoinAndSelect('profile.avatar', 'avatar')
+            .leftJoinAndSelect('chat.lastMessage', 'lastMessage')
+            .where('participant.userId = :userId', { userId: currentUser.id })
+            .orderBy('chat.updatedAt', 'DESC')
+            .getMany();
+
+        const chatsWithOtherUsers = userChats.map(chat => {
+            const otherParticipants = chat.participants.filter(p => p.user.id !== currentUser.id);
+
+            return {
+                ...chat,
+                participants: otherParticipants,
+            };
+        });
+
+        return { userChats: chatsWithOtherUsers }
+    }
+
     async createChat(params: CreateChatDto) {
-        let currentUser = this.cls.get<UserEntity>('user');
-        if (params.userId === currentUser.id)
-            throw new BadRequestException('You cannot send message to yourself');
+        const currentUser = this.cls.get<UserEntity>('user');
+        if (params.userId === currentUser.id) throw new BadRequestException('You cannot send message to yourself');
 
         const targetUser = await this.userRepo.findOne({ where: { id: params.userId } });
         if (!targetUser) throw new NotFoundException('User not found');
@@ -40,31 +65,21 @@ export class ChatService {
             .andWhere('myParticipant.userId = :userId', { userId: currentUser.id })
             .getMany();
 
-        let chat = myChats.find((chat) =>
-            chat.participants.some(
-                (participant) => participant.user.id === params.userId,
-            ),
-        );
-
-        if (!chat) {
+        let chat = myChats.find(chat => chat.participants.some(p => p.user.id === params.userId));
+        if (chat) {
+            throw new BadRequestException('Chat already exists')
+        } else {
             let participants: ChatParticipantEntity[] = [];
-
-            participants.push(this.chatParticipantRepo.create({ user: { id: params.userId } }));
-            participants.push(this.chatParticipantRepo.create({ user: { id: currentUser.id } }));
-
-            chat = this.chatRepo.create({
-                participants,
-            });
-
+            chat = this.chatRepo.create();
             chat = await this.chatRepo.save(chat);
+            participants.push(this.chatParticipantRepo.create({ user: { id: params.userId }, chat }));
+            participants.push(this.chatParticipantRepo.create({ user: { id: currentUser.id }, chat }));
             await this.chatParticipantRepo.save(participants);
         }
 
-        await this.messageService.createMessage(chat.id, { text: params.text });
-
-        return {
-            message: 'Chat is created',
-        };
+        const { savedMessage } = await this.messageService.createMessage(chat.id, { text: params.text });
+        chat.lastMessage = savedMessage;
+        await this.chatRepo.save(chat);
+        return { message: 'Chat created successfully' };
     }
-
 }

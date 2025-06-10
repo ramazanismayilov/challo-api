@@ -21,9 +21,9 @@ export class ChatEntity {
     @JoinColumn({ name: 'lastMessageId' })
     lastMessage: MessageEntity | null;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

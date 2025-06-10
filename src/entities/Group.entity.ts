@@ -34,9 +34,9 @@ export class GroupEntity {
     @JoinColumn({ name: 'chatId' })
     chat: ChatEntity;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

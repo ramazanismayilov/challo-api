@@ -9,6 +9,5 @@ export class CreateMessageDto {
     @Type()
     @IsString()
     @IsOptional()
-    @IsUUID('4', { each: true })
     mediaId?: string;
 }

@@ -20,9 +20,9 @@ export class StatusEntity {
     @Column({ type: 'timestamp' })
     expiresAt: Date;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

@@ -16,9 +16,9 @@ export class ChatParticipantEntity {
     @Column({ default: 0 })
     unreadMessageCount: number;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }

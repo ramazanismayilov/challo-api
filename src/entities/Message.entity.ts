@@ -26,9 +26,9 @@ export class MessageEntity {
     @Column({ type: 'enum', enum: MessageStatus, default: MessageStatus.SENT })
     status: MessageStatus;
 
-    @CreateDateColumn()
+    @CreateDateColumn({ select: false })
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({ select: false })
     updatedAt: Date;
 }
