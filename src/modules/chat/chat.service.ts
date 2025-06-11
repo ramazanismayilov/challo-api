@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Injectable, NotFoundException } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ChatEntity } from "src/entities/Chat.entity";
 import { DataSource, In, Repository } from "typeorm";
@@ -7,11 +7,13 @@ import { ClsService } from "nestjs-cls";
 import { UserEntity } from "src/entities/User.entity";
 import { ChatParticipantEntity } from "src/entities/Participiant.entity";
 import { MessageService } from "../message/message.service";
+import { MediaEntity } from "src/entities/Media.entity";
 
 @Injectable()
 export class ChatService {
     private chatRepo: Repository<ChatEntity>
     private userRepo: Repository<UserEntity>
+    private mediaRepo: Repository<MediaEntity>
     private chatParticipantRepo: Repository<ChatParticipantEntity>
 
     constructor(
@@ -21,6 +23,7 @@ export class ChatService {
     ) {
         this.chatRepo = this.dataSource.getRepository(ChatEntity)
         this.userRepo = this.dataSource.getRepository(UserEntity)
+        this.mediaRepo = this.dataSource.getRepository(MediaEntity)
         this.chatParticipantRepo = this.dataSource.getRepository(ChatParticipantEntity)
     }
 
@@ -34,20 +37,46 @@ export class ChatService {
             .leftJoinAndSelect('user.profile', 'profile')
             .leftJoinAndSelect('profile.avatar', 'avatar')
             .leftJoinAndSelect('chat.lastMessage', 'lastMessage')
-            .where('participant.userId = :userId', { userId: currentUser.id })
+            .leftJoinAndSelect('lastMessage.user', 'lastMessageUser')
+            .where(qb => {
+                const subQuery = qb
+                    .subQuery()
+                    .select('cp.chatId')
+                    .from('chat_participant', 'cp')
+                    .where('cp.userId = :userId')
+                    .getQuery();
+                return 'chat.id IN ' + subQuery;
+            })
+            .setParameter('userId', currentUser.id)
             .orderBy('chat.updatedAt', 'DESC')
             .getMany();
 
         const chatsWithOtherUsers = userChats.map(chat => {
-            const otherParticipants = chat.participants.filter(p => p.user.id !== currentUser.id);
+            const otherParticipants = chat.participants
+                .filter(p => p.user.id !== currentUser.id)
+                .map(p => ({
+                    id: p.user.id,
+                    displayName: p.user.displayName,
+                    unreadMessageCount: p.unreadMessageCount,
+                    profile: {
+                        avatar: p.user.profile?.avatar ?? null,
+                    },
+                }));
 
             return {
-                ...chat,
+                id: chat.id,
                 participants: otherParticipants,
+                lastMessage: chat.lastMessage
+                    ? {
+                        id: chat.lastMessage.id,
+                        text: chat.lastMessage.text,
+                        createdAt: chat.lastMessage.createdAt,
+                    }
+                    : null
             };
         });
 
-        return { userChats: chatsWithOtherUsers }
+        return { userChats: chatsWithOtherUsers };
     }
 
     async createChat(params: CreateChatDto) {
@@ -56,6 +85,11 @@ export class ChatService {
 
         const targetUser = await this.userRepo.findOne({ where: { id: params.userId } });
         if (!targetUser) throw new NotFoundException('User not found');
+
+        if (params.mediaId) {
+            const media = await this.mediaRepo.findOne({ where: { id: params.mediaId } });
+            if (!media) throw new NotFoundException('Media not found');
+        }
 
         let myChats = await this.chatRepo
             .createQueryBuilder('c')
@@ -77,9 +111,9 @@ export class ChatService {
             await this.chatParticipantRepo.save(participants);
         }
 
-        const { savedMessage } = await this.messageService.createMessage(chat.id, { text: params.text });
-        chat.lastMessage = savedMessage;
-        await this.chatRepo.save(chat);
+        await this.messageService.createMessage(chat.id, { text: params.text });
         return { message: 'Chat created successfully' };
     }
+
+    async deleteChat(){}
 }

@@ -2,7 +2,7 @@ import { ForbiddenException, Injectable, NotFoundException } from "@nestjs/commo
 import { InjectDataSource } from "@nestjs/typeorm";
 import { MessageEntity } from "src/entities/Message.entity";
 import { DataSource, Repository } from "typeorm";
-import { CreateMessageDto } from "./dto/message.dto";
+import { CreateMessageDto, UpdateMessageDto } from "./dto/message.dto";
 import { UserEntity } from "src/entities/User.entity";
 import { ClsService } from "nestjs-cls";
 import { ChatEntity } from "src/entities/Chat.entity";
@@ -26,13 +26,23 @@ export class MessageService {
         this.mediaRepo = this.dataSource.getRepository(MediaEntity)
     }
 
-    async chatMessages(chatId: number) {
+    async getChatMessages(chatId: number) {
         const user = this.cls.get<UserEntity>('user');
 
-        const chat = await this.chatRepo.findOne({
-            where: { id: chatId },
-            relations: ['participants', 'participants.user'], 
-        });
+        const chat = await this.chatRepo
+            .createQueryBuilder('chat')
+            .leftJoinAndSelect('chat.participants', 'participant')
+            .leftJoinAndSelect('participant.user', 'user')
+            .where('chat.id = :chatId', { chatId })
+            .select([
+                'chat.id',
+                'participant.id',
+                'user.id',
+                'user.displayName',
+                'user.email',
+            ])
+            .getOne();
+
 
         if (!chat) throw new NotFoundException('Chat not found');
 
@@ -42,8 +52,16 @@ export class MessageService {
         const messages = await this.messageRepo.find({
             where: { chat: { id: chatId } },
             relations: ['user', 'media'],
+            select: {
+                user: {
+                    id: true,
+                    displayName: true,
+                    email: true
+                }
+            },
             order: { createdAt: 'DESC' },
         });
+
         return { messages }
     }
 
@@ -79,6 +97,40 @@ export class MessageService {
         );
         chat.lastMessage = savedMessage;
         await this.chatRepo.save(chat);
-        return { message: 'Message created successfully', savedMessage };
+        return { message: 'Message created successfully' };
     }
+
+    async updateMessage(chatId: number, messageId: number, params: UpdateMessageDto) {
+        const user = this.cls.get<UserEntity>('user');
+
+        const chat = await this.chatRepo.findOne({ where: { id: chatId } });
+        if (!chat) throw new NotFoundException('Chat not found');
+
+        const message = await this.messageRepo.findOne({
+            where: { id: messageId, chat: { id: chatId }},
+            relations: ['user', 'chat'],
+            select: {
+                user: false
+            }
+        });
+        if (!message) throw new NotFoundException('Message not found');
+
+        if (message.user.id !== user.id) throw new ForbiddenException('You can only update your own messages');
+
+        let media: MediaEntity | null = null;
+        if (params.mediaId) {
+            media = await this.mediaRepo.findOne({ where: { id: params.mediaId } });
+            if (!media) throw new NotFoundException('Media not found');
+        }
+
+        message.text = params.text ?? message.text;
+        message.media = media ?? message.media;
+
+        const updatedMessage = await this.messageRepo.save(message);
+        return { message: 'Message updated successfully', updatedMessage };
+    }
+
+    async deleteMessage() { }
+
+    async deleteMessages() { }
 }

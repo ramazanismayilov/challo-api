@@ -1,13 +1,17 @@
+import { PartialType } from "@nestjs/swagger";
 import { Type } from "class-transformer";
 import { IsOptional, IsString, IsUUID } from "class-validator";
 
 export class CreateMessageDto {
     @Type()
     @IsString()
-    text: string;
+    @IsOptional()
+    text?: string;
 
     @Type()
-    @IsString()
+    @IsUUID()
     @IsOptional()
     mediaId?: string;
 }
+
+export class UpdateMessageDto extends PartialType(CreateMessageDto) { }

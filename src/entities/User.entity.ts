@@ -16,28 +16,28 @@ export class UserEntity {
     @Column({ unique: true })
     email: string;
 
-    @Column({ unique: true, nullable: true, type: 'varchar', select: false })
+    @Column({ unique: true, nullable: true, type: 'varchar'})
     pendingEmail?: string | null
 
-    @Column({ select: false })
+    @Column()
     password: string;
 
-    @Column({ default: false, select: false })
+    @Column({ default: false })
     isVerified: boolean
 
-    @Column({ type: 'int', nullable: true, select: false })
+    @Column({ type: 'int', nullable: true})
     otpCode: number | null;
 
-    @Column({ type: 'timestamp', nullable: true, select: false })
+    @Column({ type: 'timestamp', nullable: true})
     otpExpiredAt: Date | null;
 
-    @Column({ type: 'varchar', nullable: true, select: false })
+    @Column({ type: 'varchar', nullable: true})
     refreshToken: string | null;
 
-    @Column({ type: 'timestamp', nullable: true, select: false })
+    @Column({ type: 'timestamp', nullable: true})
     refreshTokenDate: Date | null;
 
-    @Column({ type: 'enum', enum: UserRole, default: UserRole.USER, select: false })
+    @Column({ type: 'enum', enum: UserRole, default: UserRole.USER})
     role: UserRole;
 
     @OneToOne(() => ProfileEntity, profile => profile.user, { cascade: true })

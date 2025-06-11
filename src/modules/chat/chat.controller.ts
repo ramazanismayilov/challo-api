@@ -4,7 +4,7 @@ import { ChatService } from "./chat.service";
 import { CreateChatDto } from "./dto/create-chat.dto";
 
 @Auth()
-@Controller('chat')
+@Controller('chats')
 export class ChatController {
     constructor(private chatService: ChatService) { }
 
