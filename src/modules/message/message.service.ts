@@ -51,7 +51,7 @@ export class MessageService {
 
         const messages = await this.messageRepo.find({
             where: { chat: { id: chatId } },
-            relations: ['user', 'media'],
+            relations: ['user', 'media', 'deletedBy'],
             select: {
                 user: {
                     id: true,
@@ -62,7 +62,8 @@ export class MessageService {
             order: { createdAt: 'DESC' },
         });
 
-        return { messages }
+        const visibleMessages = messages.filter(message => !message.deletedBy?.some(deletedUser => deletedUser.id === user.id));
+        return { messages: visibleMessages }
     }
 
     async createMessage(chatId: number, params: CreateMessageDto) {
@@ -106,16 +107,8 @@ export class MessageService {
         const chat = await this.chatRepo.findOne({ where: { id: chatId } });
         if (!chat) throw new NotFoundException('Chat not found');
 
-        const message = await this.messageRepo.findOne({
-            where: { id: messageId, chat: { id: chatId }},
-            relations: ['user', 'chat'],
-            select: {
-                user: false
-            }
-        });
+        const message = await this.messageRepo.findOne({ where: { id: messageId, chat: { id: chatId }, user: { id: user.id } } });
         if (!message) throw new NotFoundException('Message not found');
-
-        if (message.user.id !== user.id) throw new ForbiddenException('You can only update your own messages');
 
         let media: MediaEntity | null = null;
         if (params.mediaId) {
@@ -130,7 +123,43 @@ export class MessageService {
         return { message: 'Message updated successfully', updatedMessage };
     }
 
-    async deleteMessage() { }
+    async deleteMessage(chatId: number, messageId: number) {
+        const user = this.cls.get<UserEntity>('user');
 
-    async deleteMessages() { }
+        const message = await this.messageRepo.findOne({
+            where: { id: messageId, chat: { id: chatId } },
+            relations: ['deletedBy', 'chat']
+        });
+
+        if (!message) throw new NotFoundException('Message not found');
+
+        if (!message.deletedBy) message.deletedBy = [];
+        const alreadyDeleted = message.deletedBy.some(u => u.id === user.id);
+        if (!alreadyDeleted) {
+            message.deletedBy.push(user);
+            await this.messageRepo.save(message);
+        }
+
+        return { message: 'Message deleted for user' };
+    }
+
+    async deleteMessages(chatId: number) {
+        const user = this.cls.get<UserEntity>('user');
+
+        const messages = await this.messageRepo.find({
+            where: { chat: { id: chatId } },
+            relations: ['deletedBy', 'chat']
+        });
+
+        for (const message of messages) {
+            if (!message.deletedBy) message.deletedBy = [];
+            const alreadyDeleted = message.deletedBy.some(u => u.id === user.id);
+            if (!alreadyDeleted) {
+                message.deletedBy.push(user);
+                await this.messageRepo.save(message);
+            }
+        }
+
+        return { message: 'All messages deleted for user' };
+    }
 }

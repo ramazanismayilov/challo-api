@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
 import { MessageService } from "./message.service";
 import { Auth } from "src/common/decorators/auth.decorator";
 import { CreateMessageDto, UpdateMessageDto } from "./dto/message.dto";
@@ -20,5 +20,15 @@ export class MessageController {
     @Post(':messageId')
     updateMessage(@Param('chatId') chatId: number, @Param('messageId') messageId: number, @Body() body: UpdateMessageDto) {
         return this.messageService.updateMessage(chatId, messageId, body);
+    }
+
+    @Delete(':messageId')
+    deleteMessage(@Param('chatId') chatId: number, @Param('messageId') messageId: number) {
+        return this.messageService.deleteMessage(chatId, messageId);
+    }
+
+    @Delete()
+    deleteMessages(@Param('chatId') chatId: number) {
+        return this.messageService.deleteMessages(chatId);
     }
 }
