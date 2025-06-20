@@ -32,7 +32,7 @@ export class AuthService {
 
     async login(params: LoginDto) {
         let user = await this.userRepo.findOne({ where: { email: params.email } })
-        if (!user) throw new NotFoundException('User not found')
+        if (!user) throw new UnauthorizedException('Email or passsword is wrong')
         if (!user.isVerified) throw new ForbiddenException('Account is not verified');
 
         let checkPassword = await bcrypt.compare(params.password, user.password);
@@ -61,6 +61,7 @@ export class AuthService {
         if (emailExists) throw new ConflictException('Email already exists');
 
         const hashedPassword = await bcrypt.hash(params.password, 10);
+        if (params.password !== params.confirmPassword) throw new BadRequestException('Passwords do not match')
 
         let user = await this.userRepo.save({
             displayName: params.displayName,
@@ -88,7 +89,7 @@ export class AuthService {
                 otpCode: user.otpCode,
             },
         });
-        return { message: 'OTP sent to your email.' };
+        return { message: 'OTP sent to your email' };
     }
 
     async verifyOtp(params: VerifyOtpDto) {
@@ -133,7 +134,7 @@ export class AuthService {
             },
         });
 
-        return { message: 'OTP has been resent to your email.' };
+        return { message: 'OTP has been resent to your email' };
     }
 
     async resetPassword(params: ResetPasswordDto) {

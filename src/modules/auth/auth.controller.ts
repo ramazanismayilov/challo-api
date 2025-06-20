@@ -7,6 +7,7 @@ import { ResentOtpDto } from "./dto/resent-otp.dto";
 import { RefreshTokenDto } from "./dto/refreshToken.dto";
 import { ResetPasswordDto } from "./dto/reset-password.dto";
 import { Auth } from "src/common/decorators/auth.decorator";
+import { UserRole } from "src/common/enums/role.enum";
 
 @Controller('auth')
 export class AuthController {
@@ -38,7 +39,7 @@ export class AuthController {
     }
 
     @Post('reset-password')
-    @Auth()
+    @Auth(UserRole.ADMIN, UserRole.USER)
     resetPassword(@Body() body: ResetPasswordDto) {
         return this.authService.resetPassword(body)
     }

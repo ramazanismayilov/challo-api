@@ -1,18 +1,14 @@
-import { Type } from "class-transformer";
-import { IsOptional, IsString, Length } from "class-validator";
+import { IsOptional, IsString, IsUUID, Length } from "class-validator";
 export class ProfileUpdateDto {
-    @Type()
     @IsString()
     @IsOptional()
     @Length(3, 20)
     displayName?: string
 
-    @Type()
-    @IsString()
+    @IsUUID()
     @IsOptional()
     avatarId?: string
 
-    @Type()
     @IsString()
     @IsOptional()
     about?: string

@@ -32,14 +32,14 @@ export class UserService {
         const currentUser = this.cls.get<UserEntity>('user');
         if (currentUser.role !== UserRole.ADMIN) throw new ForbiddenException('You do not have permission for this operation');
 
-        let users = await this.userRepo.find({ relations: ['profile'] });
+        let users = await this.userRepo.find({ relations: ['profile', 'profile.avatar'] });
         if (!users || users.length === 0) throw new NotFoundException('Users not found');
 
         return users;
     }
 
     async getUser(userId: number) {
-        let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile'] });
+        let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile', 'profile.avatar'] });
         if (!user) throw new NotFoundException('User not found')
         return user
     }
@@ -50,7 +50,7 @@ export class UserService {
             relations: ['profile', 'profile.avatar']
         });
 
-        if (!user || !user.profile) throw new NotFoundException('User or profile not found');
+        if (!user) throw new NotFoundException('User not found');
 
         if (params.displayName) user.displayName = params.displayName;
         if (params.about) user.profile.about = params.about;
@@ -68,10 +68,10 @@ export class UserService {
     async updateEmail(params: EmailUpdateDto) {
         const user = await this.userRepo.findOne({ where: { id: this.cls.get<UserEntity>('user').id }, relations: ['profile'] });
         if (!user) throw new NotFoundException('User not found');
-        if (params.email === user.email) throw new ConflictException('This is already your current email.');
+        if (params.email === user.email) throw new ConflictException('This is already your current email');
 
         const emailExists = await this.userRepo.findOne({ where: { email: params.email } });
-        if (emailExists) throw new ConflictException('This email is already taken.');
+        if (emailExists) throw new ConflictException('This email is already taken');
 
         user.pendingEmail = params.email;
         user.otpCode = generateOtpNumber();
@@ -88,7 +88,7 @@ export class UserService {
         });
 
         await this.userRepo.save(user);
-        return { message: 'OTP sent to your new email address.' };
+        return { message: 'OTP sent to your new email address' };
     }
 
     async verifyNewEmail(params: VerifyNewEmailDto) {
