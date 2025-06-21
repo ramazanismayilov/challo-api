@@ -8,8 +8,7 @@ import { ClsService } from "nestjs-cls";
 import { ChatEntity } from "src/entities/Chat.entity";
 import { MediaEntity } from "src/entities/Media.entity";
 import { ChatParticipantEntity } from "src/entities/Participiant.entity";
-import moment from "moment-timezone";
-
+import { addHours, format } from 'date-fns';
 @Injectable()
 export class MessageService {
     private messageRepo: Repository<MessageEntity>
@@ -51,7 +50,7 @@ export class MessageService {
 
         const messages = await this.messageRepo.find({
             where: { chat: { id: chatId } },
-            relations: ['user', 'media'],
+            relations: ['user', 'media', 'deletedBy'],
             select: {
                 user: {
                     id: true,
@@ -65,13 +64,18 @@ export class MessageService {
         });
 
         const visibleMessages = messages.filter(message => !message.deletedBy?.some(deletedUser => deletedUser.id === user.id));
-        const formattedMessages = visibleMessages.map(({ createdAt, ...rest }) => ({
-            ...rest,
-            sendDate: createdAt
-                ? moment(createdAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm')
-                : null,
+        const formattedMessages = visibleMessages.map((item) => ({
+            text: item.text,
+            user: {
+                id: item.user.id,
+                displayName: item.user.displayName
+            },
+            media: {
+                url: item.media?.url || null
+            },
+            sendDate: item.createdAt ? format(addHours(new Date(item.createdAt), 4), "yyyy-MM-dd'T'HH:mm") : null
         }));
-        return { messages: formattedMessages }
+        return { data: formattedMessages }
     }
 
     async createMessage(chatId: number, params: CreateMessageDto) {
@@ -123,12 +127,10 @@ export class MessageService {
         const formattedMessage = {
             id: updatedMessage.id,
             text: updatedMessage.text,
-            sendDate: updatedMessage.updatedAt
-                ? moment(updatedMessage.updatedAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm')
-                : null,
+            sendDate: format(addHours(new Date(updatedMessage.updatedAt), 4), "yyyy-MM-dd'T'HH:mm"),
             media: updatedMessage.media ?? null,
         };
-        return { message: 'Message updated successfully', formattedMessage };
+        return { message: 'Message updated successfully', data: formattedMessage };
     }
 
     async deleteMessage(chatId: number, messageId: number) {

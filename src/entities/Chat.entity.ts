@@ -1,7 +1,8 @@
-import { CreateDateColumn, Entity, JoinColumn, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, OneToMany, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { MessageEntity } from "./Message.entity";
 import { ChatParticipantEntity } from "./Participiant.entity";
 import { GroupEntity } from "./Group.entity";
+import { UserEntity } from "./User.entity";
 
 @Entity('chat')
 export class ChatEntity {
@@ -20,6 +21,10 @@ export class ChatEntity {
     @OneToOne(() => MessageEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'lastMessageId' })
     lastMessage: MessageEntity | null;
+
+    @ManyToMany(() => UserEntity)
+    @JoinTable({ name: 'user_deletedChats' })
+    deletedBy: UserEntity[];
 
     @CreateDateColumn({ select: false })
     createdAt: Date;

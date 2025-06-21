@@ -8,7 +8,7 @@ import { UserEntity } from "src/entities/User.entity";
 import { ChatParticipantEntity } from "src/entities/Participiant.entity";
 import { MessageService } from "../message/message.service";
 import { MediaEntity } from "src/entities/Media.entity";
-import moment from 'moment-timezone';
+import { DeleteChatDto } from "./dto/deleteChat.dto";
 
 @Injectable()
 export class ChatService {
@@ -31,7 +31,7 @@ export class ChatService {
     async getUserChats() {
         const currentUser = this.cls.get<UserEntity>('user');
 
-        const userChats = await this.chatRepo
+        const chats = await this.chatRepo
             .createQueryBuilder('chat')
             .leftJoinAndSelect('chat.participants', 'participant')
             .leftJoinAndSelect('participant.user', 'user')
@@ -52,9 +52,12 @@ export class ChatService {
             .orderBy('chat.updatedAt', 'DESC')
             .getMany();
 
-        if (userChats.length === 0) throw new NotFoundException('Chat not found');
+        if (chats.length === 0) throw new NotFoundException('Chat not found');
 
-        const chatsFormatted = userChats.map(chat => {
+        const filteredChats = chats.filter(
+            chat => !chat.deletedBy?.some(user => user.id === currentUser.id),
+        );
+        const chatsFormatted = filteredChats.map(chat => {
             const otherParticipant = chat.participants.find(p => p.user.id !== currentUser.id);
             return {
                 displayName: otherParticipant?.user.displayName || 'Unknown',
@@ -62,7 +65,7 @@ export class ChatService {
                     avatar: otherParticipant?.user.profile?.avatar ?? null,
                 },
                 lastMessage: chat.lastMessage?.text || '',
-                createdAt: moment(chat.lastMessage?.createdAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm') || null,
+                createdAt: chat.lastMessage?.createdAt || null,
             };
         });
 
@@ -105,5 +108,28 @@ export class ChatService {
         return { message: 'Chat created successfully' };
     }
 
-    async deleteChat() { }
+    async deleteChats(params: DeleteChatDto) {
+        const user = this.cls.get<UserEntity>('user');
+
+        const chats = await this.chatRepo.find({
+            where: { id: In(params.chatIds) },
+            relations: ['deletedBy'],
+        });
+
+        if (chats.length === 0) throw new NotFoundException('No chats found');
+
+        const updatedChats: ChatEntity[] = [];
+
+        for (const chat of chats) {
+            const alreadyDeleted = chat.deletedBy?.some(u => u.id === user.id);
+
+            if (!alreadyDeleted) {
+                chat.deletedBy = [...(chat.deletedBy || []), user];
+                updatedChats.push(chat);
+            }
+        }
+        if (updatedChats.length > 0) await this.chatRepo.save(updatedChats);
+
+        return { message: 'Chats deleted for user' };
+    }
 }

@@ -29,6 +29,6 @@ export class MessageEntity {
     @CreateDateColumn()
     createdAt: Date;
 
-    @UpdateDateColumn({select: false})
+    @UpdateDateColumn()
     updatedAt: Date;
 }
