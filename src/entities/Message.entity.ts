@@ -1,5 +1,4 @@
-import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
-import { MessageStatus } from "src/common/enums/messageStatus.enum";
+import { Column, CreateDateColumn, Entity, JoinColumn, JoinTable, ManyToMany, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { MediaEntity } from "./Media.entity";
 import { UserEntity } from "./User.entity";
 import { ChatEntity } from "./Chat.entity";
@@ -27,12 +26,9 @@ export class MessageEntity {
     @JoinTable({ name: 'user_deletedMessage' })
     deletedBy: UserEntity[];
 
-    @Column({ type: 'enum', enum: MessageStatus, default: MessageStatus.SENT })
-    status: MessageStatus;
-
-    @CreateDateColumn({ 'type': 'timestamptz' })
+    @CreateDateColumn()
     createdAt: Date;
 
-    @UpdateDateColumn()
+    @UpdateDateColumn({select: false})
     updatedAt: Date;
 }

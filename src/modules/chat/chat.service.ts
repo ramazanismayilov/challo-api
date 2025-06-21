@@ -8,6 +8,7 @@ import { UserEntity } from "src/entities/User.entity";
 import { ChatParticipantEntity } from "src/entities/Participiant.entity";
 import { MessageService } from "../message/message.service";
 import { MediaEntity } from "src/entities/Media.entity";
+import moment from 'moment-timezone';
 
 @Injectable()
 export class ChatService {
@@ -51,32 +52,21 @@ export class ChatService {
             .orderBy('chat.updatedAt', 'DESC')
             .getMany();
 
-        const chatsWithOtherUsers = userChats.map(chat => {
-            const otherParticipants = chat.participants
-                .filter(p => p.user.id !== currentUser.id)
-                .map(p => ({
-                    id: p.user.id,
-                    displayName: p.user.displayName,
-                    unreadMessageCount: p.unreadMessageCount,
-                    profile: {
-                        avatar: p.user.profile?.avatar ?? null,
-                    },
-                }));
+        if (userChats.length === 0) throw new NotFoundException('Chat not found');
 
+        const chatsFormatted = userChats.map(chat => {
+            const otherParticipant = chat.participants.find(p => p.user.id !== currentUser.id);
             return {
-                id: chat.id,
-                participants: otherParticipants,
-                lastMessage: chat.lastMessage
-                    ? {
-                        id: chat.lastMessage.id,
-                        text: chat.lastMessage.text,
-                        createdAt: chat.lastMessage.createdAt,
-                    }
-                    : null
+                displayName: otherParticipant?.user.displayName || 'Unknown',
+                profile: {
+                    avatar: otherParticipant?.user.profile?.avatar ?? null,
+                },
+                lastMessage: chat.lastMessage?.text || '',
+                createdAt: moment(chat.lastMessage?.createdAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm') || null,
             };
         });
 
-        return { userChats: chatsWithOtherUsers };
+        return { userChats: chatsFormatted };
     }
 
     async createChat(params: CreateChatDto) {
@@ -111,9 +101,9 @@ export class ChatService {
             await this.chatParticipantRepo.save(participants);
         }
 
-        await this.messageService.createMessage(chat.id, { text: params.text });
+        await this.messageService.createMessage(chat.id, { text: params.text, mediaId: params.mediaId });
         return { message: 'Chat created successfully' };
     }
 
-    async deleteChat(){}
+    async deleteChat() { }
 }

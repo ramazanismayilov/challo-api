@@ -8,6 +8,7 @@ import { ClsService } from "nestjs-cls";
 import { ChatEntity } from "src/entities/Chat.entity";
 import { MediaEntity } from "src/entities/Media.entity";
 import { ChatParticipantEntity } from "src/entities/Participiant.entity";
+import moment from "moment-timezone";
 
 @Injectable()
 export class MessageService {
@@ -33,17 +34,16 @@ export class MessageService {
             .createQueryBuilder('chat')
             .leftJoinAndSelect('chat.participants', 'participant')
             .leftJoinAndSelect('participant.user', 'user')
+            .leftJoinAndSelect('user.profile', 'profile')
+            .leftJoinAndSelect('profile.avatar', 'avatar')
             .where('chat.id = :chatId', { chatId })
             .select([
                 'chat.id',
                 'participant.id',
                 'user.id',
-                'user.displayName',
-                'user.email',
+                'user.displayName'
             ])
             .getOne();
-
-
         if (!chat) throw new NotFoundException('Chat not found');
 
         const isParticipant = chat.participants.some(participant => participant.user.id === user.id);
@@ -51,19 +51,27 @@ export class MessageService {
 
         const messages = await this.messageRepo.find({
             where: { chat: { id: chatId } },
-            relations: ['user', 'media', 'deletedBy'],
+            relations: ['user', 'media'],
             select: {
                 user: {
                     id: true,
-                    displayName: true,
-                    email: true
+                    displayName: true
+                },
+                media: {
+                    url: true
                 }
             },
             order: { createdAt: 'DESC' },
         });
 
         const visibleMessages = messages.filter(message => !message.deletedBy?.some(deletedUser => deletedUser.id === user.id));
-        return { messages: visibleMessages }
+        const formattedMessages = visibleMessages.map(({ createdAt, ...rest }) => ({
+            ...rest,
+            sendDate: createdAt
+                ? moment(createdAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm')
+                : null,
+        }));
+        return { messages: formattedMessages }
     }
 
     async createMessage(chatId: number, params: CreateMessageDto) {
@@ -88,14 +96,6 @@ export class MessageService {
         });
 
         const savedMessage = await this.messageRepo.save(newMessage);
-        await Promise.all(
-            chat.participants.map(async (participant) => {
-                if (participant.user.id !== user.id) {
-                    participant.unreadMessageCount += 1;
-                    await this.chatParticipantRepo.save(participant);
-                }
-            })
-        );
         chat.lastMessage = savedMessage;
         await this.chatRepo.save(chat);
         return { message: 'Message created successfully' };
@@ -120,7 +120,15 @@ export class MessageService {
         message.media = media ?? message.media;
 
         const updatedMessage = await this.messageRepo.save(message);
-        return { message: 'Message updated successfully', updatedMessage };
+        const formattedMessage = {
+            id: updatedMessage.id,
+            text: updatedMessage.text,
+            sendDate: updatedMessage.updatedAt
+                ? moment(updatedMessage.updatedAt).tz('Asia/Baku').format('YYYY-MM-DD HH:mm')
+                : null,
+            media: updatedMessage.media ?? null,
+        };
+        return { message: 'Message updated successfully', formattedMessage };
     }
 
     async deleteMessage(chatId: number, messageId: number) {

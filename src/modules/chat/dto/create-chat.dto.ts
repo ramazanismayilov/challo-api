@@ -6,7 +6,7 @@ export class CreateChatDto {
 
     @IsString()
     @IsOptional()
-    text: string;
+    text?: string;
 
     @IsOptional()
     @IsUUID()

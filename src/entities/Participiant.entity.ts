@@ -13,9 +13,6 @@ export class ChatParticipantEntity {
     @ManyToOne(() => ChatEntity, chat => chat.participants, { onDelete: 'CASCADE' })
     chat: ChatEntity;
 
-    @Column({ default: 0 })
-    unreadMessageCount: number;
-
     @CreateDateColumn({ select: false })
     createdAt: Date;
 
