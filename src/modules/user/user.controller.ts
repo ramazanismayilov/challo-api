@@ -24,7 +24,7 @@ export class UserController {
     }
 
     @Get('myProfile')
-    @Auth()
+    @Auth(UserRole.ADMIN, UserRole.USER)
     getMyProfile() {
         return this.userService.getMyProfile()
     }
