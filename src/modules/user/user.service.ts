@@ -54,9 +54,10 @@ export class UserService {
         let newProfile = {
             displayName: myProfile.displayName,
             email: myProfile.email,
-            avatar: myProfile.profile.avatar
+            avatar: myProfile.profile.avatar,
+            about: myProfile.profile.about
         }
-        return newProfile;
+        return newProfile
     }
 
     async updateProfile(params: ProfileUpdateDto) {

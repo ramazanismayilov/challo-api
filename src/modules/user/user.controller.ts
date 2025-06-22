@@ -18,7 +18,6 @@ export class UserController {
     }
 
     @Get('myProfile')
-    @Auth(UserRole.ADMIN, UserRole.USER)
     getMyProfile() {
         return this.userService.getMyProfile()
     }
@@ -28,7 +27,6 @@ export class UserController {
     getUser(@Param('id') id: number) {
         return this.userService.getUser(id)
     }
-
 
     @Post('updateProfile')
     async updateProfile(@Body() body: ProfileUpdateDto) {
