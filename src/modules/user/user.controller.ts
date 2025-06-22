@@ -12,13 +12,21 @@ export class UserController {
     constructor(private userService: UserService) { }
 
     @Get()
+    @Auth(UserRole.ADMIN)
     getUsers() {
         return this.userService.getUsers()
     }
 
     @Get(':id')
+    @Auth(UserRole.ADMIN)
     getUser(@Param('id') id: number) {
         return this.userService.getUser(id)
+    }
+
+    @Get('myProfile')
+    @Auth()
+    getMyProfile() {
+        return this.userService.getMyProfile()
     }
 
     @Post('updateProfile')

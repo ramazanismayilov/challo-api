@@ -44,6 +44,18 @@ export class UserService {
         return user
     }
 
+    async getMyProfile() {
+        console.log('----------------------------------------------------------------');
+        const user = this.cls.get<UserEntity>('user');
+        const myProfile = await this.userRepo.findOne({
+            where: { id: user.id },
+            relations: ['profile', 'profile.avatar']
+        });
+
+        if (!myProfile) throw new NotFoundException('User not found');
+        return myProfile;
+    }
+
     async updateProfile(params: ProfileUpdateDto) {
         const user = await this.userRepo.findOne({
             where: { id: this.cls.get<UserEntity>('user').id },
