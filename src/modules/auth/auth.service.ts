@@ -155,7 +155,7 @@ export class AuthService {
     verifyToken(token: string) {
         try {
             const decoded = this.jwt.verify(token);
-            return { message: 'Token is valid', decoded };
+            return { message: 'Token is valid', data: decoded };
         } catch (error) {
             throw new UnauthorizedException('Token is invalid or expired');
         }
