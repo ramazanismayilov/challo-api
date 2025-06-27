@@ -5,8 +5,15 @@
   <title>Chat API Test with Socket</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
-    body { font-family: sans-serif; padding: 20px; }
-    .message { margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+    body {
+      font-family: sans-serif;
+      padding: 20px;
+    }
+    .message {
+      margin-bottom: 10px;
+      border-bottom: 1px dashed #ccc;
+      padding-bottom: 5px;
+    }
   </style>
 </head>
 <body>
@@ -14,75 +21,144 @@
 
   <div id="messages"></div>
 
+  <!-- Yeni mesaj göndər -->
   <h2>📤 Send New Message</h2>
   <input id="text" type="text" placeholder="Your message" />
   <input id="mediaId" type="text" placeholder="Media ID (optional)" />
   <button onclick="sendMessage()">Send</button>
 
+  <!-- Mesaj redaktəsi -->
+  <h2>📑 Update Message</h2>
+  <input id="updateId" type="number" placeholder="Message ID" />
+  <input id="updateText" type="text" placeholder="New text" />
+  <input id="updateMediaId" type="text" placeholder="New Media ID (optional)" />
+  <button onclick="updateMessage()">Update</button>
+
+  <!-- Mesaj sil -->
+  <h2>🗑️ Delete Message</h2>
+  <input id="deleteId" type="number" placeholder="Message ID" />
+  <button onclick="deleteMessage()">Delete</button>
+
   <script>
-    const API_URL = 'http://localhost:3000/api/chat/44/messages';
-    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsImlhdCI6MTc1MTAzMDYxMCwiZXhwIjoxNzUxMDMxNTEwfQ.7GQQPLD3_8tco-vDCm5J65rCJHsYRwf3Y_HU-MRodBg';
+    const CHAT_ID = 44;
+    const API_BASE = `http://localhost:3000/api/chat/${CHAT_ID}/messages`;
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsImlhdCI6MTc1MTAzNzUyNywiZXhwIjoxNzUxMDM4NDI3fQ.15UXG4VWXEN8J5_KQFgedKJkE-XpoGis5tRvtytTkAI';
 
-    const socket = io('http://localhost:3000');
-    socket.emit('joinChat', '44'); 
+    const authHeaders = {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json'
+    };
 
-    socket.on('connect', () => {
-      console.log('✅ Socket qoşuldu:', socket.id);
-    });
+    /* --------- Socket bağlantısı --------- */
+    const socket = io('http://localhost:3000', { auth: { token } });
+    socket.emit('joinChat', String(CHAT_ID));
 
-    socket.on('newMessage', (msg) => {
-      appendMessage(msg);
-    });
+    socket.on('connect', () => console.log('✅ Socket qoşuldu:', socket.id));
+    socket.on('newMessage', appendMessage);
+    socket.on('message:updated', updateMessageInDOM);
+    socket.on('message:deleted', removeMessageFromDOM);
 
+    /* --------- İlk mesajları yüklə --------- */
     async function loadMessages() {
       try {
-        const res = await fetch(API_URL, {
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-
-        const result = await res.json();
-        const messagesDiv = document.getElementById('messages');
-        messagesDiv.innerHTML = '';
-        result.data.forEach(appendMessage);
-      } catch (err) {
-        alert('❌ Failed to load messages');
-        console.error(err);
+        const res = await fetch(API_BASE, { headers: authHeaders });
+        const { data } = await res.json();
+        const wrap = document.getElementById('messages');
+        wrap.innerHTML = '';
+        data.forEach(appendMessage);
+      } catch (e) {
+        console.error(e);
       }
     }
 
+    /* --------- Yeni mesaj göndər --------- */
     async function sendMessage() {
-      const text = document.getElementById('text').value;
-      const mediaId = document.getElementById('mediaId').value;
+      const text = document.getElementById('text').value.trim();
+      const mediaId = document.getElementById('mediaId').value.trim();
+      if (!text) return alert('Mətn boş ola bilməz');
 
-      const payload = { text, ...(mediaId && { mediaId }) };
+      await fetch(API_BASE, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({ text, ...(mediaId && { mediaId }) })
+      });
+
+      document.getElementById('text').value = '';
+    }
+
+    /* --------- Mesaj redaktə et --------- */
+    async function updateMessage() {
+      const id = document.getElementById('updateId').value;
+      const newText = document.getElementById('updateText').value.trim();
+      const newMedia = document.getElementById('updateMediaId').value.trim();
+
+      if (!id) return alert('Message ID yazın');
+      if (!newText && !newMedia) return alert('Heç olmasa mətn və ya media verin');
+
+      await fetch(`${API_BASE}/${id}`, {
+        method: 'POST',
+        headers: authHeaders,
+        body: JSON.stringify({
+          ...(newText && { text: newText }),
+          ...(newMedia && { mediaId: newMedia })
+        })
+      });
+    }
+
+    /* --------- Mesaj sil --------- */
+    async function deleteMessage() {
+      const id = document.getElementById('deleteId').value;
+      if (!id) return alert('Message ID yazın');
 
       try {
-        await fetch(API_URL, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify(payload)
+        await fetch(`${API_BASE}/${id}`, {
+          method: 'DELETE',
+          headers: authHeaders
         });
-        document.getElementById('text').value = '';
       } catch (err) {
-        alert('❌ Failed to send message');
-        console.error(err);
+        console.error('❌ Mesaj silinərkən xəta:', err);
+        alert('Silinmə zamanı xəta baş verdi');
       }
     }
 
+    /* --------- DOM funksiyaları --------- */
     function appendMessage(msg) {
-      const messagesDiv = document.getElementById('messages');
+      const wrap = document.getElementById('messages');
+      const existing = wrap.querySelector(`.message[data-id="${msg.id}"]`);
+      if (existing) {
+        existing.innerHTML = renderInner(msg);
+        return;
+      }
       const div = document.createElement('div');
       div.className = 'message';
-      div.innerHTML = `
-        <strong>${msg.user.displayName}</strong> (${msg.sendDate || new Date().toISOString()})<br/>
+      div.dataset.id = msg.id;
+      div.innerHTML = renderInner(msg);
+      wrap.appendChild(div);
+    }
+
+    function updateMessageInDOM(msg) {
+      const div = document.querySelector(`.message[data-id="${msg.id}"]`);
+      if (div) {
+        div.innerHTML = renderInner(msg);
+      } else {
+        appendMessage(msg);
+      }
+    }
+
+    function removeMessageFromDOM({ id }) {
+      const div = document.querySelector(`.message[data-id="${id}"]`);
+      if (div) div.remove();
+    }
+
+    function renderInner(msg) {
+      return `
+        <strong>${msg.user?.displayName ?? 'Unknown User'}</strong>
+        (${msg.sendDate || new Date().toISOString()})<br/>
         ${msg.text}<br/>
         ${msg.media?.url ? `<a href="${msg.media.url}" target="_blank">📎 Media</a>` : ''}
       `;
-      messagesDiv.appendChild(div);
     }
+
     loadMessages();
   </script>
 </body>

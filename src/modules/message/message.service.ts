@@ -102,20 +102,7 @@ export class MessageService {
         const savedMessage = await this.messageRepo.save(newMessage);
         chat.lastMessage = savedMessage;
         await this.chatRepo.save(chat);
-
-        this.socketGateway.emitNewMessage(chat.id, {
-            id: savedMessage.id,
-            text: savedMessage.text,
-            user: {
-                id: user.id,
-                displayName: user.displayName,
-            },
-            media: media ? {
-                id: media.id,
-                url: media.url,
-            } : null,
-            createdAt: savedMessage.createdAt,
-        });
+        this.socketGateway.emitNewMessage(chat.id, newMessage);
         return { message: 'Message created successfully' };
     }
 
@@ -142,8 +129,17 @@ export class MessageService {
             id: updatedMessage.id,
             text: updatedMessage.text,
             sendDate: format(addHours(new Date(updatedMessage.updatedAt), 4), "yyyy-MM-dd'T'HH:mm"),
-            media: updatedMessage.media ?? null,
+            media: updatedMessage.media ? {
+                id: updatedMessage.media.id,
+                url: updatedMessage.media.url,
+            } : null,
+            user: {
+                id: user.id,
+                displayName: user.displayName,
+            }
         };
+
+        this.socketGateway.emitUpdatedMessage(chatId, formattedMessage);
         return { message: 'Message updated successfully', data: formattedMessage };
     }
 
@@ -164,6 +160,7 @@ export class MessageService {
             await this.messageRepo.save(message);
         }
 
+        this.socketGateway.emitDeleteMessage(chatId, messageId);
         return { message: 'Message deleted for user' };
     }
 
