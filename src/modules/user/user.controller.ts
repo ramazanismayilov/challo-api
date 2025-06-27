@@ -1,10 +1,12 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { UserService } from "./user.service";
 import { Auth } from "src/common/decorators/auth.decorator";
 import { UserRole } from "src/common/enums/role.enum";
 import { ProfileUpdateDto } from "./dto/updateProfile.dto";
 import { EmailUpdateDto } from "./dto/updateEmail.dto";
 import { VerifyNewEmailDto } from "./dto/verifyNewEmail.dto";
+import { SearchDto } from "src/common/dto/search.dto";
+import { ApiQuery } from "@nestjs/swagger";
 
 @Auth()
 @Controller('users')
@@ -19,8 +21,8 @@ export class UserController {
 
     @Get('chatUsers')
     @Auth(UserRole.ADMIN, UserRole.USER)
-    getChatUsers() {
-        return this.userService.getChatUsers()
+    getChatUsers(@Query() query: SearchDto) {
+        return this.userService.getChatUsers(query);
     }
 
     @Get('myProfile')

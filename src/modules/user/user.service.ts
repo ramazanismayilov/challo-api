@@ -3,13 +3,14 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { ClsService } from "nestjs-cls";
 import { UserRole } from "src/common/enums/role.enum";
 import { UserEntity } from "src/entities/User.entity";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, FindOptionsWhere, ILike, Repository } from "typeorm";
 import { ProfileUpdateDto } from "./dto/updateProfile.dto";
 import { MediaEntity } from "src/entities/Media.entity";
 import { VerifyNewEmailDto } from "./dto/verifyNewEmail.dto";
 import { EmailUpdateDto } from "./dto/updateEmail.dto";
 import { generateOtpExpireDate, generateOtpNumber } from "src/common/utils/randomNumber.utils";
 import { MailerService } from "@nestjs-modules/mailer";
+import { SearchDto } from "src/common/dto/search.dto";
 
 @Injectable()
 export class UserService {
@@ -35,11 +36,14 @@ export class UserService {
         return users;
     }
 
-    async getChatUsers() {
-        let chatUsers = await this.userRepo.find({ relations: ['profile', 'profile.avatar'] });
+    async getChatUsers(query: SearchDto) {
+        const where: FindOptionsWhere<UserEntity> = {};
+        if (query.search) where.displayName = ILike(`%${query.search}%`);
+
+        const chatUsers = await this.userRepo.find({ where, relations: ['profile', 'profile.avatar'] });
         if (!chatUsers || chatUsers.length === 0) throw new NotFoundException('Users not found');
 
-        let users = chatUsers.map(item => ({
+        const users = chatUsers.map(item => ({
             displayName: item.displayName,
             about: item.profile.about,
             avatar: item.profile.avatar?.url || null,
@@ -47,6 +51,7 @@ export class UserService {
 
         return { data: users };
     }
+
 
     async getUser(userId: number) {
         let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile', 'profile.avatar'] });
