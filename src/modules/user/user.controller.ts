@@ -17,11 +17,17 @@ export class UserController {
         return this.userService.getUsers()
     }
 
+    @Get('chatUsers')
+    @Auth(UserRole.ADMIN, UserRole.USER)
+    getChatUsers() {
+        return this.userService.getChatUsers()
+    }
+
     @Get('myProfile')
     getMyProfile() {
         return this.userService.getMyProfile()
     }
-    
+
     @Get(':id')
     @Auth(UserRole.ADMIN)
     getUser(@Param('id') id: number) {

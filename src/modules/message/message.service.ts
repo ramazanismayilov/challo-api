@@ -7,22 +7,22 @@ import { UserEntity } from "src/entities/User.entity";
 import { ClsService } from "nestjs-cls";
 import { ChatEntity } from "src/entities/Chat.entity";
 import { MediaEntity } from "src/entities/Media.entity";
-import { ChatParticipantEntity } from "src/entities/Participiant.entity";
 import { addHours, format } from 'date-fns';
+import { SocketGateway } from "src/libs/socket/socket.gateway";
+
 @Injectable()
 export class MessageService {
     private messageRepo: Repository<MessageEntity>
     private chatRepo: Repository<ChatEntity>
-    private chatParticipantRepo: Repository<ChatParticipantEntity>
     private mediaRepo: Repository<MediaEntity>
 
     constructor(
         private cls: ClsService,
+        private socketGateway: SocketGateway,
         @InjectDataSource() private dataSource: DataSource
     ) {
         this.messageRepo = this.dataSource.getRepository(MessageEntity)
         this.chatRepo = this.dataSource.getRepository(ChatEntity)
-        this.chatParticipantRepo = this.dataSource.getRepository(ChatParticipantEntity)
         this.mediaRepo = this.dataSource.getRepository(MediaEntity)
     }
 
@@ -102,6 +102,20 @@ export class MessageService {
         const savedMessage = await this.messageRepo.save(newMessage);
         chat.lastMessage = savedMessage;
         await this.chatRepo.save(chat);
+
+        this.socketGateway.emitNewMessage(chat.id, {
+            id: savedMessage.id,
+            text: savedMessage.text,
+            user: {
+                id: user.id,
+                displayName: user.displayName,
+            },
+            media: media ? {
+                id: media.id,
+                url: media.url,
+            } : null,
+            createdAt: savedMessage.createdAt,
+        });
         return { message: 'Message created successfully' };
     }
 

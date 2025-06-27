@@ -10,12 +10,10 @@ import { VerifyNewEmailDto } from "./dto/verifyNewEmail.dto";
 import { EmailUpdateDto } from "./dto/updateEmail.dto";
 import { generateOtpExpireDate, generateOtpNumber } from "src/common/utils/randomNumber.utils";
 import { MailerService } from "@nestjs-modules/mailer";
-import { ProfileEntity } from "src/entities/Profile.entity";
 
 @Injectable()
 export class UserService {
     private userRepo: Repository<UserEntity>;
-    private profileRepo: Repository<ProfileEntity>;
     private mediaRepo: Repository<MediaEntity>;
 
     constructor(
@@ -24,7 +22,6 @@ export class UserService {
         @InjectDataSource() private dataSource: DataSource
     ) {
         this.userRepo = this.dataSource.getRepository(UserEntity);
-        this.profileRepo = this.dataSource.getRepository(ProfileEntity);
         this.mediaRepo = this.dataSource.getRepository(MediaEntity);
     }
 
@@ -36,6 +33,19 @@ export class UserService {
         if (!users || users.length === 0) throw new NotFoundException('Users not found');
 
         return users;
+    }
+
+    async getChatUsers() {
+        let chatUsers = await this.userRepo.find({ relations: ['profile', 'profile.avatar'] });
+        if (!chatUsers || chatUsers.length === 0) throw new NotFoundException('Users not found');
+
+        let users = chatUsers.map(item => ({
+            displayName: item.displayName,
+            about: item.profile.about,
+            avatar: item.profile.avatar?.url || null,
+        }));
+
+        return { data: users };
     }
 
     async getUser(userId: number) {

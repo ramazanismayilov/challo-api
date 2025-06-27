@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>Chat API Test with Socket</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
+  <style>
+    body { font-family: sans-serif; padding: 20px; }
+    .message { margin-bottom: 10px; border-bottom: 1px dashed #ccc; padding-bottom: 5px; }
+  </style>
+</head>
+<body>
+  <h2>💬 Chat Test (Chat ID: 44)</h2>
+
+  <div id="messages"></div>
+
+  <h2>📤 Send New Message</h2>
+  <input id="text" type="text" placeholder="Your message" />
+  <input id="mediaId" type="text" placeholder="Media ID (optional)" />
+  <button onclick="sendMessage()">Send</button>
+
+  <script>
+    const API_URL = 'http://localhost:3000/api/chat/44/messages';
+    const token = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJ1c2VySWQiOjcsImlhdCI6MTc1MTAzMDYxMCwiZXhwIjoxNzUxMDMxNTEwfQ.7GQQPLD3_8tco-vDCm5J65rCJHsYRwf3Y_HU-MRodBg';
+
+    const socket = io('http://localhost:3000');
+    socket.emit('joinChat', '44'); 
+
+    socket.on('connect', () => {
+      console.log('✅ Socket qoşuldu:', socket.id);
+    });
+
+    socket.on('newMessage', (msg) => {
+      appendMessage(msg);
+    });
+
+    async function loadMessages() {
+      try {
+        const res = await fetch(API_URL, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+
+        const result = await res.json();
+        const messagesDiv = document.getElementById('messages');
+        messagesDiv.innerHTML = '';
+        result.data.forEach(appendMessage);
+      } catch (err) {
+        alert('❌ Failed to load messages');
+        console.error(err);
+      }
+    }
+
+    async function sendMessage() {
+      const text = document.getElementById('text').value;
+      const mediaId = document.getElementById('mediaId').value;
+
+      const payload = { text, ...(mediaId && { mediaId }) };
+
+      try {
+        await fetch(API_URL, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify(payload)
+        });
+        document.getElementById('text').value = '';
+      } catch (err) {
+        alert('❌ Failed to send message');
+        console.error(err);
+      }
+    }
+
+    function appendMessage(msg) {
+      const messagesDiv = document.getElementById('messages');
+      const div = document.createElement('div');
+      div.className = 'message';
+      div.innerHTML = `
+        <strong>${msg.user.displayName}</strong> (${msg.sendDate || new Date().toISOString()})<br/>
+        ${msg.text}<br/>
+        ${msg.media?.url ? `<a href="${msg.media.url}" target="_blank">📎 Media</a>` : ''}
+      `;
+      messagesDiv.appendChild(div);
+    }
+    loadMessages();
+  </script>
+</body>
+</html>
