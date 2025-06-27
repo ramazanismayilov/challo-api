@@ -52,7 +52,6 @@ export class UserService {
         return { data: users };
     }
 
-
     async getUser(userId: number) {
         let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile', 'profile.avatar'] });
         if (!user) throw new NotFoundException('User not found')

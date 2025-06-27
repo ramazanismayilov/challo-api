@@ -9,6 +9,7 @@ import { ChatParticipantEntity } from "src/entities/Participiant.entity";
 import { MessageService } from "../message/message.service";
 import { MediaEntity } from "src/entities/Media.entity";
 import { DeleteChatDto } from "./dto/deleteChat.dto";
+import { SearchDto } from "src/common/dto/search.dto";
 
 @Injectable()
 export class ChatService {
@@ -28,10 +29,10 @@ export class ChatService {
         this.chatParticipantRepo = this.dataSource.getRepository(ChatParticipantEntity)
     }
 
-    async getUserChats() {
+    async getUserChats(query: SearchDto) {
         const currentUser = this.cls.get<UserEntity>('user');
 
-        const chats = await this.chatRepo
+        let qb = this.chatRepo
             .createQueryBuilder('chat')
             .leftJoinAndSelect('chat.participants', 'participant')
             .leftJoinAndSelect('participant.user', 'user')
@@ -48,15 +49,18 @@ export class ChatService {
                     .getQuery();
                 return 'chat.id IN ' + subQuery;
             })
-            .setParameter('userId', currentUser.id)
-            .orderBy('chat.updatedAt', 'DESC')
-            .getMany();
+            .setParameter('userId', currentUser.id);
+
+        if (query.search) qb = qb.andWhere('user.displayName ILIKE :search', { search: `%${query.search}%` });
+
+        const chats = await qb.orderBy('chat.updatedAt', 'DESC').getMany();
 
         if (chats.length === 0) throw new NotFoundException('Chat not found');
 
         const filteredChats = chats.filter(
             chat => !chat.deletedBy?.some(user => user.id === currentUser.id),
         );
+
         const chatsFormatted = filteredChats.map(chat => {
             const otherParticipant = chat.participants.find(p => p.user.id !== currentUser.id);
             return {

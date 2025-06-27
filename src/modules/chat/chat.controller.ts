@@ -1,8 +1,9 @@
-import { Body, Controller, Delete, Get, Param, Post } from "@nestjs/common";
+import { Body, Controller, Delete, Get, Param, Post, Query } from "@nestjs/common";
 import { Auth } from "src/common/decorators/auth.decorator";
 import { ChatService } from "./chat.service";
 import { CreateChatDto } from "./dto/create-chat.dto";
 import { DeleteChatDto } from "./dto/deleteChat.dto";
+import { SearchDto } from "src/common/dto/search.dto";
 
 @Auth()
 @Controller('chats')
@@ -10,8 +11,8 @@ export class ChatController {
     constructor(private chatService: ChatService) { }
 
     @Get()
-    getUserChats() {
-        return this.chatService.getUserChats();
+    getUserChats(@Query() query: SearchDto) {
+        return this.chatService.getUserChats(query);
     }
 
     @Post()
