@@ -44,6 +44,7 @@ export class UserService {
         if (!chatUsers || chatUsers.length === 0) throw new NotFoundException('Users not found');
 
         const users = chatUsers.map(item => ({
+            id: item.id,
             displayName: item.displayName,
             about: item.profile.about,
             avatar: item.profile.avatar?.url || null,
