@@ -53,6 +53,19 @@ export class UserService {
         return { data: users };
     }
 
+    async getChatUserId(userId: number) {
+        let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile', 'profile.avatar'] });
+        if (!user) throw new NotFoundException('User not found');
+
+        const userData = {
+            id: user.id,
+            displayName: user.displayName,
+            about: user.profile.about,
+            avatar: user.profile.avatar?.url || null,
+        };
+        return { data: userData };
+    }
+
     async getUser(userId: number) {
         let user = await this.userRepo.findOne({ where: { id: userId }, relations: ['profile', 'profile.avatar'] });
         if (!user) throw new NotFoundException('User not found')

@@ -25,6 +25,12 @@ export class UserController {
         return this.userService.getChatUsers(query);
     }
 
+    @Get('chatUsers/:id')
+    @Auth(UserRole.ADMIN)
+    getChatUserId(@Param('id') id: number) {
+        return this.userService.getChatUserId(id)
+    }
+
     @Get('myProfile')
     getMyProfile() {
         return this.userService.getMyProfile()
