@@ -26,7 +26,7 @@ export class UserController {
     }
 
     @Get('chatUsers/:id')
-    @Auth(UserRole.ADMIN)
+    @Auth(UserRole.ADMIN, UserRole.USER)
     getChatUserId(@Param('id') id: number) {
         return this.userService.getChatUserId(id)
     }
