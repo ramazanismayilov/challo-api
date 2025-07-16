@@ -13,7 +13,7 @@ export class StatusEntity {
     @Column({ nullable: true })
     text?: string;
 
-    @OneToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
+    @ManyToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'mediaId' })
     media?: MediaEntity | null;
 

@@ -2,7 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from "@nestjs/comm
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ClsService } from "nestjs-cls";
 import { StatusEntity } from "src/entities/Status.entity";
-import { DataSource, Repository } from "typeorm";
+import { DataSource, MoreThan, Not, Repository } from "typeorm";
 import { CreateStatusDto } from "./dto/status.dto";
 import { UserEntity } from "src/entities/User.entity";
 import { MediaEntity } from "src/entities/Media.entity";
@@ -20,6 +20,56 @@ export class StatusService {
         this.statusRepo = this.dataSource.getRepository(StatusEntity)
         this.userRepo = this.dataSource.getRepository(UserEntity)
         this.mediaRepo = this.dataSource.getRepository(MediaEntity)
+    }
+
+    async getAllStatuses() {
+        let statuses = await this.statusRepo.find({ relations: ['media', 'user', 'user.profile', 'user.profile.avatar'] })
+        if (!statuses) throw new NotFoundException('Status not found')
+
+        const result = statuses.map((status) => ({
+            id: status.id,
+            text: status.text ? status.text : null,
+            viewCount: status.viewCount,
+            createdAt: status.createdAt,
+            expiresAt: status.expiresAt,
+            user: {
+                id: status.user.id,
+                avatar: status.user.profile.avatar?.url || null,
+                displayName: status.user.displayName,
+            },
+            media: status.media ? status.media.url : null,
+        }));
+
+        return { data: result }
+    }
+
+    async getStatusesForViewer() {
+        const currentUser = this.cls.get<UserEntity>('user');
+
+        const statuses = await this.statusRepo.find({
+            where: {
+                user: Not(currentUser.id),
+                expiresAt: MoreThan(new Date()),
+            },
+            relations: ['media', 'user', 'user.profile', 'user.profile.avatar'],
+            order: { createdAt: 'DESC' },
+        });
+
+        if (!statuses.length) throw new NotFoundException('Not Found');
+
+        const result = statuses.map((status) => ({
+            id: status.id,
+            text: status.text ? status.text : null,
+            createdAt: status.createdAt,
+            user: {
+                id: status.user.id,
+                avatar: status.user.profile.avatar?.url || null,
+                displayName: status.user.displayName,
+            },
+            media: status.media ? status.media.url : null,
+        }));
+
+        return { data: result };
     }
 
     async createStatus(params: CreateStatusDto) {
@@ -49,8 +99,6 @@ export class StatusService {
                 id: savedStatus.id,
                 text: savedStatus.text,
                 expiresAt: savedStatus.expiresAt,
-                createdAt: savedStatus.createdAt,
-                updatedAt: savedStatus.updatedAt,
                 viewCount: savedStatus.viewCount,
                 user: {
                     displayName: user.displayName,
@@ -67,11 +115,9 @@ export class StatusService {
         };
     }
 
-
     async getUserStatuses(userId: number) { }
     async getStatusById(statusId: number) { }
     async getStatusViewers(statusId: number) { }
-    async getStatusesForViewer(viewerId: number) { }
     async updateStatus(id: number, params: any) { }
     async deleteStatus(statusId: number) { }
 }
