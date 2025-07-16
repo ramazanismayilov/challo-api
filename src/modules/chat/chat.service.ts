@@ -64,6 +64,7 @@ export class ChatService {
         const chatsFormatted = filteredChats.map(chat => {
             const otherParticipant = chat.participants.find(p => p.user.id !== currentUser.id);
             return {
+                chatId: chat.id,
                 displayName: otherParticipant?.user.displayName || 'Unknown',
                 profile: {
                     avatar: otherParticipant?.user.profile?.avatar ?? null,

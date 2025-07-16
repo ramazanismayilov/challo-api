@@ -1,4 +1,4 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn } from 'typeorm';
+import { Entity, PrimaryGeneratedColumn, Column, ManyToOne, CreateDateColumn, UpdateDateColumn, OneToOne, JoinColumn, ManyToMany, JoinTable } from 'typeorm';
 import { MediaEntity } from './Media.entity';
 import { UserEntity } from './User.entity';
 
@@ -15,7 +15,14 @@ export class StatusEntity {
 
     @OneToOne(() => MediaEntity, { nullable: true, onDelete: 'SET NULL' })
     @JoinColumn({ name: 'mediaId' })
-    media?: MediaEntity;
+    media?: MediaEntity | null;
+
+    @ManyToMany(() => UserEntity, { cascade: true })
+    @JoinTable({ name: 'status_views' })
+    viewers: UserEntity[];
+
+    @Column({ default: 0 })
+    viewCount: number
 
     @Column({ type: 'timestamp' })
     expiresAt: Date;

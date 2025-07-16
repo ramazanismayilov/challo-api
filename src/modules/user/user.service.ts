@@ -3,7 +3,7 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { ClsService } from "nestjs-cls";
 import { UserRole } from "src/common/enums/role.enum";
 import { UserEntity } from "src/entities/User.entity";
-import { DataSource, FindOptionsWhere, ILike, Repository } from "typeorm";
+import { DataSource, FindOptionsWhere, ILike, Not, Repository } from "typeorm";
 import { ProfileUpdateDto } from "./dto/updateProfile.dto";
 import { MediaEntity } from "src/entities/Media.entity";
 import { VerifyNewEmailDto } from "./dto/verifyNewEmail.dto";
@@ -37,7 +37,8 @@ export class UserService {
     }
 
     async getChatUsers(query: SearchDto) {
-        const where: FindOptionsWhere<UserEntity> = {};
+        let currentUser = this.cls.get<UserEntity>('user')
+        const where: FindOptionsWhere<UserEntity> = { isVerified: true, id: Not(currentUser.id), };
         if (query.search) where.displayName = ILike(`%${query.search}%`);
 
         const chatUsers = await this.userRepo.find({ where, relations: ['profile', 'profile.avatar'] });
