@@ -124,7 +124,7 @@ export class UserService {
 
         await this.mailer.sendMail({
             to: params.email,
-            subject: 'Confirm Your New Email - Chat System!',
+            subject: 'Confirm Your New Email - Challo!',
             template: 'verify-email',
             context: {
                 displayName: user.displayName,

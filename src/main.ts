@@ -18,8 +18,8 @@ async function bootstrap() {
   );
 
   const config = new DocumentBuilder()
-    .setTitle('Chat System')
-    .setDescription('The Chat System API description')
+    .setTitle('Challo')
+    .setDescription('The Challo API description')
     .setVersion('1.0')
     .addBearerAuth()
     .build();

@@ -71,6 +71,36 @@ export class StatusService {
 
         return { data: result };
     }
+    
+    async getUserStatuses(userId: number) {
+        let currentUser = this.cls.get<UserEntity>('user')
+        let statuses = await this.statusRepo.find({
+            where: {
+                user: { id: userId },
+                expiresAt: MoreThan(new Date()),
+            },
+            relations: ['media', 'user', 'user.profile', 'user.profile.avatar'],
+            order: { createdAt: 'DESC' },
+        })
+
+        if (userId === currentUser.id) throw new NotFoundException('Cannot view own statuses');
+
+        if (!statuses.length) throw new NotFoundException('Not Found');
+
+        const result = statuses.map((status) => ({
+            id: status.id,
+            text: status.text ? status.text : null,
+            createdAt: status.createdAt,
+            user: {
+                id: status.user.id,
+                avatar: status.user.profile.avatar?.url || null,
+                displayName: status.user.displayName,
+            },
+            media: status.media ? status.media.url : null,
+        }));
+
+        return { data: result };
+    }
 
     async createStatus(params: CreateStatusDto) {
         const currentUser = this.cls.get<UserEntity>('user');
@@ -115,7 +145,6 @@ export class StatusService {
         };
     }
 
-    async getUserStatuses(userId: number) { }
     async getStatusById(statusId: number) { }
     async getStatusViewers(statusId: number) { }
     async updateStatus(id: number, params: any) { }

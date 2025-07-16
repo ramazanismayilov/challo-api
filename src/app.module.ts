@@ -73,7 +73,7 @@ import { StatusModule } from './modules/status/status.module';
             },
           },
           defaults: {
-            from: `"Chat System" <${config.get('SMTP_FROM')}>`,
+            from: `"Challo" <${config.get('SMTP_FROM')}>`,
           },
           template: {
             dir: join(__dirname, '..', 'src', 'templates'),

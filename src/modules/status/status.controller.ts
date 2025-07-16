@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Post } from "@nestjs/common";
+import { Body, Controller, Get, Param, Post } from "@nestjs/common";
 import { Auth } from "src/common/decorators/auth.decorator";
 import { StatusService } from "./status.service";
 import { CreateStatusDto } from "./dto/status.dto";
@@ -19,6 +19,12 @@ export class StatusController {
     @Auth(UserRole.ADMIN, UserRole.USER)
     getStatusesForViewer() {
         return this.statusService.getStatusesForViewer();
+    }
+
+    @Get('getStatusesForViewer/:userId')
+    @Auth(UserRole.ADMIN, UserRole.USER)
+    getUserStatuses(@Param('userId') userId: number) {
+        return this.statusService.getUserStatuses(userId);
     }
 
     @Post()

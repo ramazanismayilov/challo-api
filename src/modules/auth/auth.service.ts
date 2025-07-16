@@ -82,7 +82,7 @@ export class AuthService {
         await this.userRepo.save(user)
         await this.mailer.sendMail({
             to: params.email,
-            subject: 'Verify Your Email - Chat System!',
+            subject: 'Verify Your Email - Challo!',
             template: 'verify-email',
             context: {
                 displayName: user.displayName,
@@ -126,7 +126,7 @@ export class AuthService {
 
         await this.mailer.sendMail({
             to: params.email,
-            subject: 'Verify Your Email – Chat System!',
+            subject: 'Verify Your Email – Challo!',
             template: 'verify-email',
             context: {
                 displayName: user.displayName,
